@@ -84,7 +84,7 @@ class generateTable(object):
                 newResults[i][0] = replace[i]
                 self.inputModel = dict(newResults)
 
-    def gen_table_body(self, stars):
+    def gen_table_body(self, stars, digits):
         """
         Creates the columns that contain the models. Iterates through each 
         variable name and appends the values to the column if they exist, or an 
@@ -106,7 +106,7 @@ class generateTable(object):
                     text += '  &   '
                 else:
                     int(beta)
-                    text += '   &   ' +  str(round(beta,2))
+                    text += '   &   ' +  str(round(beta, digits))
             text += """  \\\\  
                     """
             for i in range(len(self.models)):
@@ -118,16 +118,21 @@ class generateTable(object):
                     text += '  &   '
                 else:
                     if stars == True:
-                        if round(self.inputModel[key][i][2],2) <= self.sig_level:
+                        if round(self.inputModel[key][i][2], digits
+                                 ) <= self.sig_level:
                             int(parens)
-                            text += ('   &   ' +  '(' + str(round(parens,2)) + ')' 
+                            text += ('   &   ' +  '(' + str(round(parens, digits
+                                                                  )) + ')'
                             + '*')
-                        elif round(self.inputModel[key][i][2],2) > self.sig_level:
+                        elif round(self.inputModel[key][i][2], digits
+                                   ) > self.sig_level:
                             int(parens)
-                            text += '   &   ' +  '(' + str(round(parens,2)) + ')'
+                            text += '   &   ' +  '(' + str(round(parens, digits
+                                                                 )) + ')'
                     elif stars == False:
                         int(parens)
-                        text += '   &   ' +  '(' + str(round(parens,2)) + ')'
+                        text += '   &   ' +  '(' + str(round(parens, digits)) \
+                                + ')'
             text += """  \\\\
                     """
 #TODO: This implementation is messy and I don't like it, but it gets the idea
@@ -236,7 +241,7 @@ class generateTable(object):
         else:
             print 'Please enter a valid list or string for model_name'
 
-    def model_table(self, stars=True): 
+    def model_table(self, stars=True, digits = 2):
         """
         Generates the middle, which contains the actual model, of the LaTeX 
         table using the model generated in the createModel function.
@@ -256,10 +261,10 @@ class generateTable(object):
         """
         if type(self.inputModel) == dict:
             if stars == True:
-                body = self.gen_table_body(stars)
+                body = self.gen_table_body(stars, digits)
                 return body
             elif stars == False:
-                body = self.gen_table_body(stars)
+                body = self.gen_table_body(stars, digits)
                 return body
             else:
                 print 'Please input a valid argument for the stars option'
@@ -317,7 +322,8 @@ class generateTable(object):
                 """ % (tableSize, tableSize, self.sig_level)
         return footer
 
-    def create_table(self, caption, label, model_name = None, stars=True):
+    def create_table(self, caption, label, model_name = None, stars=True,
+                     digits = 2):
         """
         Combines all of the model-creation functions together into one easy to
         use function. 
@@ -337,7 +343,7 @@ class generateTable(object):
         """
         self.create_model()
         header = self.start_table(caption, label, model_name=model_name)
-        body = self.model_table(stars=stars)
+        body = self.model_table(stars=stars, digits = digits)
         footer = self.end_table()
         table = header +  body + footer
         if self.output == 'print':
