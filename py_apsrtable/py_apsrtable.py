@@ -84,7 +84,7 @@ class generateTable(object):
                 newResults[i][0] = replace[i]
                 self.inputModel = dict(newResults)
 
-    def gen_table_body(self, stars, digits):
+    def gen_table_body(self, stars, digits, stats):
         """
         Creates the columns that contain the models. Iterates through each 
         variable name and appends the values to the column if they exist, or an 
@@ -137,19 +137,56 @@ class generateTable(object):
                     """
 #TODO: This implementation is messy and I don't like it, but it gets the idea
 #down. These values need to be put into a list or dict and then iterate through
-#it. 
-        text += """ 
-                    $N$ """
-        for model in self.models:
-            text += '    &    ' + str(model.nobs)
-        text += """ \\\\
-                    AIC """
-        for model in self.models:
-            text += '    &    ' + str(round(model.aic, 2))
-        text += """ \\\\
-                    BIC """
-        for model in self.models:
-            text += '    &    ' + str(round(model.bic))
+#it.
+        # Account for inconsistent upper/lowercase:
+        stats_uniform = [x.upper() for x in stats]
+        available_stats = ['N', 'DF_MODEL', 'FVALUE', 'F_PVALUE', 'AIC',
+                           'BIC', 'RSQUARED', 'RSQUARED_ADJ']
+        # Stats asked for but not available:
+        problems = [val for val in stats_uniform if val not in available_stats]
+        if problems != []:
+            raise Exception("Stat(s) " + ", ".join([str(x.upper()) for x in
+                                              problems]) + " not available.")
+        if "N" in stats_uniform:
+            text += """
+                        $N$ """
+            for model in self.models:
+                text += '    &    ' + str(model.nobs)
+        if "DF_MODEL" in stats_uniform:
+            text += """ \\\\
+                        d.f. """
+            for model in self.models:
+                text += '    &    ' + str(model.df_model)
+        if "FVALUE" in stats_uniform:
+            text += """ \\\\
+                        F-statistic """
+            for model in self.models:
+                text += '    &    ' + str(model.fvalue)
+        if "F_PVALUE" in stats_uniform:
+            text += """ \\\\
+                        Model $p$ value """
+            for model in self.models:
+                text += '    &    ' + str(model.f_pvalue)
+        if "AIC" in stats_uniform:
+            text += """ \\\\
+                        AIC """
+            for model in self.models:
+                text += '    &    ' + str(round(model.aic, 2))
+        if "BIC" in stats_uniform:
+            text += """ \\\\
+                        BIC """
+            for model in self.models:
+                text += '    &    ' + str(round(model.bic))
+        if "RSQUARED" in stats_uniform:
+            text += """ \\\\
+                        $R^{2}$ """
+            for model in self.models:
+                text += '    &    ' + str(round(model.rsquared))
+        if "RSQUARED_ADJ" in stats_uniform:
+            text += """ \\\\
+                        $Adj.\>R^{2} $ """
+            for model in self.models:
+                text += '    &    ' + str(round(model.rsquared_adj))
         text += """ \\\\ \hline
                 """
         return text            
@@ -241,7 +278,7 @@ class generateTable(object):
         else:
             print 'Please enter a valid list or string for model_name'
 
-    def model_table(self, stars=True, digits = 2):
+    def model_table(self, stars, digits, stats):
         """
         Generates the middle, which contains the actual model, of the LaTeX 
         table using the model generated in the createModel function.
@@ -261,10 +298,10 @@ class generateTable(object):
         """
         if type(self.inputModel) == dict:
             if stars == True:
-                body = self.gen_table_body(stars, digits)
+                body = self.gen_table_body(stars, digits, stats)
                 return body
             elif stars == False:
-                body = self.gen_table_body(stars, digits)
+                body = self.gen_table_body(stars, digits, stats)
                 return body
             else:
                 print 'Please input a valid argument for the stars option'
@@ -323,7 +360,7 @@ class generateTable(object):
         return footer
 
     def create_table(self, caption, label, model_name = None, stars=True,
-                     digits = 2):
+                     digits = 2, stats = ['N']):
         """
         Combines all of the model-creation functions together into one easy to
         use function. 
@@ -343,7 +380,7 @@ class generateTable(object):
         """
         self.create_model()
         header = self.start_table(caption, label, model_name=model_name)
-        body = self.model_table(stars=stars, digits = digits)
+        body = self.model_table(stars=stars, digits = digits, stats = stats)
         footer = self.end_table()
         table = header +  body + footer
         if self.output == 'print':
